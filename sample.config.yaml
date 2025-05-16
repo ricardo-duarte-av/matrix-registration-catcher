@@ -1,0 +1,5 @@
+MatrixServer: "https://matrix.org"
+Username: "@registration:matrix.org"
+Password: "pasword"
+LogRoom: "!room_id:matrix.org"
+ListenPort: 12345

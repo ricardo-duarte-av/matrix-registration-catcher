@@ -8,8 +8,8 @@ import (
         "log"
         "net/http"
         "os"
-        "time"
         "strings"
+        "time"
 
         "gopkg.in/yaml.v3"
         "maunium.net/go/mautrix"
@@ -38,16 +38,6 @@ var (
         client *mautrix.Client
         roomID id.RoomID
 )
-
-func getSourceIP(r *http.Request) string {
-        xff := r.Header.Get("X-Forwarded-For")
-        if xff != "" {
-                // Take first value if multiple IPs present
-                return strings.Split(xff, ",")[0]
-        }
-        return r.RemoteAddr
-}
-
 
 func loadConfig() error {
         data, err := ioutil.ReadFile("config.yaml")
@@ -134,20 +124,31 @@ func initMatrix() error {
         return nil
 }
 
-func matrixLog(sourceIP, method, body string) {
+func getSourceIP(r *http.Request) string {
+        xff := r.Header.Get("X-Forwarded-For")
+        if xff != "" {
+                // Take first value if multiple IPs present
+                return strings.Split(xff, ",")[0]
+        }
+        return r.RemoteAddr
+}
+
+func matrixLog(sourceIP, method, body, userAgent string) {
         plainMsg := fmt.Sprintf(
                 "Register endpoint called\n\n"+
                         "SourceIP: %s\n"+
                         "method: %s\n"+
+                        "user-agent: %s\n"+
                         "body: %s",
-                sourceIP, method, body,
+                sourceIP, method, userAgent, body,
         )
         htmlMsg := fmt.Sprintf(
                 "<b>Register endpoint called</b><br><br>"+
                         "<b>SourceIP</b>: <code>%s</code><br>"+
                         "<b>method</b>: <code>%s</code><br>"+
+                        "<b>user-agent</b>: <code>%s</code><br>"+
                         "<b>body</b>: <code>%s</code>",
-                sourceIP, method, body,
+                sourceIP, method, userAgent, body,
         )
 
         // Print to console (plain)
@@ -188,7 +189,8 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
         r.Body.Close()
         clientIP := getSourceIP(r)
         body := string(bodyBytes)
-        matrixLog(clientIP, r.Method, body)
+        userAgent := r.Header.Get("User-Agent")
+        matrixLog(clientIP, r.Method, body, userAgent)
 
         resp := map[string]interface{}{
                 "session": "register_session_id",
